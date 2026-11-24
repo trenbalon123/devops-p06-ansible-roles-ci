@@ -1,0 +1,40 @@
+---
+- name: Install nginx with Virtual Hosts
+  hosts: webservers
+  remote_user: runner
+  become: true
+  gather_facts: false
+
+  vars:
+    sites:
+      - etis.com
+      - fizfak.com
+      - mehmat.ru
+
+  roles:
+    - nginx_vhosts
+
+- name: Update local hosts file for vhosts
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: false
+
+  vars:
+    sites:
+      - etis.com
+      - fizfak.com
+      - mehmat.ru
+
+  tasks:
+    - name: Build hosts file
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        create: true
+        mode: "0644"
+        block: |
+          {% for host_ip in groups['webservers'] %}
+          {% for host_name in sites %}
+          {{ host_ip }} {{ host_name }}
+          {% endfor %}
+          {% endfor %}
